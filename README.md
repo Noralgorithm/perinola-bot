@@ -16,7 +16,7 @@
 
 Install the virtual environment module and install the required version dependencies
 ```
-pip install virtualenv
+python -m virtualenv env
 ```
 
 From the powershell in the root directory of the project use the following command to start the virtual environment module
