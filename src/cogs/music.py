@@ -80,6 +80,7 @@ class Music(commands.Cog):
             if index < 0 or index >= self.queue.count:
                 raise ValueError('Índice inválido...')
             del self.queue._queue[index]
+            await self.context.send('Deleted selected song...')
         except (ValueError):
             await self.context.send('Índice inválido...')
 
@@ -96,8 +97,7 @@ class Music(commands.Cog):
                 raise ValueError('Índice inválido...')
             song = self.queue[index]
             self.queue.put_at_index(1, song)
-            await self.context.send('Deleted selected song...')
-            await self.context.invoke(self.queue)
+            await self.context.send('Put selected song at queue front...')
             del self.queue._queue[index + 1]
         except (ValueError):
             await self.context.send('Índice inválido...')
