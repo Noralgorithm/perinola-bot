@@ -38,8 +38,6 @@ py src/app.py
 
 # To-do ⭕
 
-- ***[Command]*** to list the musics on the list
 - ***[Command]*** to move the bot from channels
 - ***[Improvement]*** Make the bot move automaticaly from where he is being called
-- ***[Improvement]*** Add duration of the song in the play message
 - ***[Feature]*** UI for better User eXperience
