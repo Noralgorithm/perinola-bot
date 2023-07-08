@@ -10,6 +10,7 @@ class Music(commands.Cog):
         self.queue: wavelink.Queue = wavelink.Queue()
         self.player: wavelink.Player
         self.context: wavelink.Context
+        self.loading: False
 
     ### Connection ###
     @commands.Cog.listener()
@@ -17,8 +18,12 @@ class Music(commands.Cog):
         self.bot.loop.create_task(self.node_connect())
 
     async def node_connect(self):
-        await self.bot.wait_until_ready()
-        await wavelink.NodePool.create_node(bot=self.bot, host='narco.buses.rocks', port='2269', password='glasshost1984')
+        try: 
+            await self.bot.wait_until_ready()
+            await wavelink.NodePool.create_node(bot=self.bot, host='lavalink.devamop.in', port='80', password='DevamOP')
+        except (ValueError):
+            await self.context.send(f'***Ha sucedido un pequeño error, intente de nuevo...***')
+            self.node_connect()
 
     @commands.Cog.listener()
     async def on_wavelink_node_ready(self, node: wavelink.Node):
@@ -27,35 +32,44 @@ class Music(commands.Cog):
     ### Music ###
     @commands.command(aliases=['p'])
     async def play(self, ctx: commands.Context, *, search: wavelink.YouTubeTrack):
-        if not ctx.voice_client:
-            vc: wavelink.Player = await ctx.author.voice.channel.connect(cls=wavelink.Player)
-            self.player = vc
-            self.context = ctx
-        else:
-            vc: wavelink.Player = ctx.voice_client
-            self.player = vc
-            self.context = ctx
+        self.loading = True
+        try:
+            if not ctx.voice_client:
+                vc: wavelink.Player = await ctx.author.voice.channel.connect(cls=wavelink.Player)
+                self.player = vc
+                self.context = ctx
+            else:
+                vc: wavelink.Player = ctx.voice_client
+                self.player = vc
+                self.context = ctx
 
-        if not self.queue.is_empty:
-            await ctx.send(f'🚌 Queued ***{search}***. *({duration_formatter.duration_formatter(search.duration)})*')
-            return self.queue.put(search)
-
-        self.queue.put(search)
-        track = await vc.play(self.queue[0])
-        await ctx.send(f'▶ Playing ***{track}***. *({duration_formatter.duration_formatter(search.duration)})*')
+            if not self.queue.is_empty:
+                await ctx.send(f'🚌 Queued ***{search}***. *({duration_formatter.duration_formatter(search.duration)})*')
+                return self.queue.put(search)
+            self.queue.put(search)
+            track = await vc.play(self.queue[0])
+            await ctx.send(f'▶ Playing ***{track}***. *({duration_formatter.duration_formatter(search.duration)})*')
+        except(ValueError):
+            await self.context.send(f'***Ha sucedido un pequeño error, intente de nuevo...***')
+        finally:
+            self.loading = False
 
     @commands.Cog.listener()
     async def on_wavelink_track_end(self, player: player, track: Track, reason):
-        print('Terminó la canción.')
-        self.queue.get()
-        if self.queue.is_empty:
-            return await self.context.send(f'⛔ No more songs to play...')
-        if not self.queue.is_empty:
-            track = await self.player.play(self.queue[0])
-            await self.context.send(f'▶ Playing ***{track}***. *({duration_formatter.duration_formatter(track.duration)})*')
+        try:
+            print('Terminó la canción.')
+            self.queue.get()
+            if self.queue.is_empty:
+                return await self.context.send(f'⛔ No more songs to play...')
+            if not self.queue.is_empty:
+                track = await self.player.play(self.queue[0])
+                await self.context.send(f'▶ Playing ***{track}***. *({duration_formatter.duration_formatter(track.duration)})*')
+        except(ValueError):
+            await self.context.send(f'***Ha sucedido un pequeño error, intente de nuevo...***')
 
     @commands.command(aliases=['s'])
     async def skip(self, ctx):
+        if self.loading: return
         print('Canción skippeada.')
         print(self.queue)
         await self.player.stop()
